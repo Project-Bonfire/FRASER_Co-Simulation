@@ -1,0 +1,3 @@
+[submodule "fraser-template"]
+	path = fraser-template
+	url = https://github.com/annika-dlr/fraser-template
