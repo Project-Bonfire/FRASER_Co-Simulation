@@ -49,6 +49,9 @@ The following dependencies need to be satisfied in order to run the tool:
   - make
   - sudo cp flatc flathash flatsamplebinary flatsampletext flattests /usr/local/bin
 
+Finally, make a temporary folder for the simulation in the home folder
+ * mkdir ~/tmp_simulation
+
 Running
 -------
 * cd fraser-template
