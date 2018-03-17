@@ -4,7 +4,7 @@
 
 int sc_main(int argc, char *argv[])
 {
-  cout << endl << "Hello world from SystemC !" << endl;
-  return 0;
+    cout << endl << "Hello world from SystemC !" << endl;
+    return 0;
 }
 
