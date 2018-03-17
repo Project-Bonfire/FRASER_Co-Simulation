@@ -35,13 +35,15 @@ The following dependencies need to be satisfied in order to run the tool:
   - python3 -V (check if install was successful)
 * Install Python libraries and ansible with pip:
   - pip -V (make sure the version is 3.6. If this returns 2.x, you probably have to call pip using pip3)
-  - sudo pip install --upgrade pip
-  - sudo pip install setuptools
-  - sudo pip install ansible
+  - sudo pip3.6 install --upgrade pip
+  - sudo pip3.6 install setuptools
+  - sudo pip3.6 install git+https://github.com/ansible/ansible.git@devel
+
 * Install libraries for Python 2.7:
   - sudo pip2.7 install lxml configparser pyyaml
 * Additional dependencies:
-  - sudo apt-get install python-yaml gdbm python3.6-gdbm libzmq3-dev libboost1.58-all-dev libpugixml-dev
+  - sudo apt-get install python-yaml python3.6-gdbm libzmq3-dev libboost1.58-all-dev libpugixml-dev python3.6-dev
+  python3.6-venv
 * Install Flatbuffers (needed to compile from source)
   - git clone https://github.com/google/flatbuffers.git
   - cd flatbuffers
