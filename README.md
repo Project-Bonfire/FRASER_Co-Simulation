@@ -8,7 +8,7 @@ Make sure that you also clone the submodules within the repository by adding the
 --recursive.
 
 ## Dependency installation
-There is a script which will install all dependencies for running FRASER (tested on a fresh installation of Linux Mint 18.3, based on Ubuntu LTS 16.04).
+There is a script (*setup_env_for_fraser.sh*) which will install all dependencies for running FRASER (tested on a fresh installation of Linux Mint 18.3, based on Ubuntu LTS 16.04).
 
 For installation on any other OS, or for manual installation, please check the documentation in the script.
 
