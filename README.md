@@ -21,11 +21,15 @@ There is a script (*setup_env_for_fraser.sh*) which will install all dependencie
 
 For installation on any other OS, or for manual installation, please check the documentation in the script.
 
-**Note:** This script installs Python3.6 as the default Python version! This can potentially break some system components. It is advised to run it from virtual machine which you are not afraid to break.
-
 ## Running
-    cd fraser-template
-    make all
+
+**Before running:** edit the 'owner' parameter in the following line in *fraser-template/ansible/roles/deployment/tasks/main.yml* to match your current Linux username:
+  - name: Fix 'tmp-folder' permission
+    file: path=~/tmp_simulation owner=karl mode=0775 state=directory recurse=yes
+
+**Running:**
+  cd fraser-template
+  make all
 
 **Note:** This will ask you for a sudo password in order to install additional dependencies.
 

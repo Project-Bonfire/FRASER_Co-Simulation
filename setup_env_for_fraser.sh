@@ -31,13 +31,10 @@ sudo add-apt-repository -y ppa:jonathonf/python-3.6
 sudo apt update
 
 sudo apt install -y python3.6 python3.6-venv python3.6-dev
-sudo update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.5 1
-sudo update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.6 2
-
-sudo update-alternatives --set python3 /usr/bin/python3.6
-
-echo "--- DEBUG: Verify the python version is v 3.6:"
-python3 -V
+# sudo update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.5 1
+# sudo update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.6 2
+#
+# sudo update-alternatives --set python3 /usr/bin/python3.5
 
 echo "--- Installing pip for Python 3.6"
 wget https://bootstrap.pypa.io/get-pip.py
