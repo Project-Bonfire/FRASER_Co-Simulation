@@ -23,11 +23,13 @@ For installation on any other OS, or for manual installation, please check the d
 
 ## Running
 
-**Before running:** edit the 'owner' parameter in the following line in *fraser-template/ansible/roles/deployment/tasks/main.yml* to match your current Linux username:
+**Before running:**
+
+Edit the 'owner' parameter in the following line in *fraser-template/ansible/roles/deployment/tasks/main.yml* to match your current Linux user name:
 
 ```yaml
 - name: Fix 'tmp-folder' permission
-  file: path=~/tmp_simulation owner=karl mode=0775 state=directory recurse=yes
+  file: path=~/tmp_simulation owner=user mode=0775 state=directory recurse=yes
 ```
 
 **Running:**
