@@ -8,6 +8,8 @@ fi
 
 # Setup ssh login to localhost using keys
 
+sudo apt update
+
 sudo apt install -y openssh-server python-pip python3-pip
 
 echo "--- The script will generate key-based login for localhost now. Press enter / type 'yes' for all questions"
