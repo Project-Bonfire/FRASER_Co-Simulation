@@ -13,31 +13,6 @@
 # define DBG_PRINT(x) do {} while (0)
 #endif
 
-/***************************
-** Flit encodings
-****************************
-Header flit:
-Bits        Field
-31,30,29    001 (header flit)
-28-17       Length of the packet, upto 4096 flits.
-16-13       Destination router address
-12-9        Source router address.
-8-1         Packet ID
-0           Parity
-
-Body flit:
-Bits        Field
-31,30,29    010 (body flit)
-28-1        Payload
-0           Parity
-
-Tail flit:
-Bits        Field
-31,30,29    100 (tail flit)
-28-1        Payload
-0           Parity
-****************************/
-
 // Clear a bit at position 'p' in the value '*val'
 void clear_bit(uint32_t *val, uint32_t p)
 {
@@ -70,7 +45,7 @@ void set_parity_bit(unsigned int *f)
     v ^= v >> 8;
     v ^= v >> 4;
     v &= 0xf;
-    
+
     //Set bit[0]
     *f |= (0x6996 >> v) & 1;
 }
@@ -125,14 +100,24 @@ void set_headerflit_id(unsigned int *f, unsigned int v)
     set_parity_bit(f);      //update parity bit
 }
 
-
 /////////////////////////////////////////////////////
 ////                                             ////
 //// Methods to make a header, body or tail flit ////
 ////                                             ////
 /////////////////////////////////////////////////////
 
-//Make a header-flit in '*h_flit' with the given 
+/***************************
+** HEADER flit encoding
+****************************
+Bits        Field
+31,30,29    001 (header flit)
+28-17       Length of the packet, upto 4096 flits.
+16-13       Destination router address
+12-9        Source router address.
+8-1         Packet ID
+0           Parity
+****************************/
+//Make a header-flit in '*h_flit' with the given
 //length, destination address, source address and packet ID
 void make_header_flit(unsigned int *h_flit, unsigned int len, unsigned int dest_adrs, unsigned int src_adrs, unsigned int id)
 {
@@ -145,4 +130,57 @@ void make_header_flit(unsigned int *h_flit, unsigned int len, unsigned int dest_
     set_headerflit_src_adrs(h_flit, src_adrs);
     set_headerflit_id(h_flit, id);
 } //end void make_header_flit()
+
+/***************************
+** BODY flit encoding
+****************************
+Bits        Field
+31,30,29    010 (body flit)
+28-1        Payload
+0           Parity
+****************************/
+void set_bodyflit_payload(unsigned int *f, unsigned int v)
+{
+    int loc = 1;            //field location to update
+    clear_bits(f, loc, 28); //clear field location
+    *f |= v << loc;         //insert field value
+
+    set_parity_bit(f);      //update parity bit
+}
+//Make a body-flit in '*b_flit' with the given payload
+void make_body_flit(unsigned int *b_flit, unsigned int payld)
+{
+    *b_flit = 0;
+
+    set_flit_type(b_flit, BODY_FLIT);
+
+    set_bodyflit_payload(b_flit, payld);
+} //end void make_body_flit()
+
+/***************************
+** TAIL flit encoding
+****************************
+Tail flit:
+Bits        Field
+31,30,29    100 (tail flit)
+28-1        Payload
+0           Parity
+****************************/
+void set_tailflit_payload(unsigned int *f, unsigned int v)
+{
+    int loc = 1;            //field location to update
+    clear_bits(f, loc, 28); //clear field location
+    *f |= v << loc;         //insert field value
+
+    set_parity_bit(f);      //update parity bit
+}
+//Make a tail-flit in '*t_flit' with the given payload
+void make_tail_flit(unsigned int *t_flit, unsigned int payld)
+{
+    *t_flit = 0;
+
+    set_flit_type(t_flit, TAIL_FLIT);
+
+    set_tailflit_payload(t_flit, payld);
+} //end void make_tail_flit()
 
