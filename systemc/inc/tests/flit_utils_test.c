@@ -1,4 +1,4 @@
-#include "flit_utils.h"
+#include "../flit_utils.h"
 #include <assert.h>
 void main()
 {

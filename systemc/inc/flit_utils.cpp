@@ -1,17 +1,6 @@
 #include <stdio.h>
 #include <stdint.h>
-
-#define HEADER_FLIT 1
-#define BODY_FLIT   2
-#define TAIL_FLIT   4
-
-//#define DEBUG
-
-#ifdef DEBUG
-# define DBG_PRINT(x) printf x
-#else
-# define DBG_PRINT(x) do {} while (0)
-#endif
+#include "flit_utils.hpp"
 
 // Clear a bit at position 'p' in the value '*val'
 void clear_bit(uint32_t *val, uint32_t p)
@@ -24,7 +13,7 @@ void clear_bit(uint32_t *val, uint32_t p)
 // Clear 'range' bits starting at position 'start' in the value '*val'
 void clear_bits(uint32_t *val, uint32_t start, uint32_t range)
 {
-    int i;
+    uint32_t i;
     for(i=0 ; i<range; i++)
     {
         clear_bit(val, start+i);
@@ -48,7 +37,7 @@ uint32_t get_bit_range(uint32_t val, uint32_t start, uint32_t range)
 
 
 //Compute even parity of value '*f' and set bit[0]
-void set_parity_bit(unsigned int *f)
+void set_parity_bit(uint32_t *f)
 {
     //clear the parity bit at location [0]
     //so that it is not taken in later computation
@@ -56,7 +45,7 @@ void set_parity_bit(unsigned int *f)
 
     //www.graphics.stanford.edu/~seander/bithacks.html#ParityParallel
     //Compute parity in parallel
-    unsigned int v = *f;  // word value to compute the parity of
+    uint32_t v = *f;  // word value to compute the parity of
     v ^= v >> 16;
     v ^= v >> 8;
     v ^= v >> 4;
@@ -68,52 +57,65 @@ void set_parity_bit(unsigned int *f)
 
 ///////////////////////////////////////////////////
 //////                                     ////////
+////// Methods to get each field of a flit ////////
+//////                                     ////////
+///////////////////////////////////////////////////
+
+int get_flit_type(uint32_t *flit)
+{
+    int flit_type = get_bit_range(*flit, FLIT_TYPE_OFFSET, FLIT_TYPE_WIDTH);
+
+    return flit_type;      //return the flit time
+}
+
+///////////////////////////////////////////////////
+//////                                     ////////
 ////// Methods to set each field of a flit ////////
 //////                                     ////////
 ///////////////////////////////////////////////////
 
-void set_flit_type(unsigned int *f, unsigned int v)
+void set_flit_type(uint32_t *f, uint32_t v)
 {
-    int loc = 29;           //field location to update
-    clear_bits(f, loc, 3);  //clear field location
-    *f |= v << loc;         //insert field value
+    int loc = FLIT_TYPE_OFFSET;             //field location to update
+    clear_bits(f, loc, FLIT_TYPE_WIDTH);    //clear field location
+    *f |= v << loc;                         //insert field value
 
-    set_parity_bit(f);      //update parity bit
+    set_parity_bit(f);                      //update parity bit
 }
 
-void set_headerflit_len(unsigned int *f, unsigned int v)
+void set_headerflit_dest_adrs(uint32_t *f, uint32_t v)
 {
-    int loc = 17;           //field location to update
-    clear_bits(f, loc, 12); //clear field location
-    *f |= v << loc;         //insert field value
+    int loc = DESTINATION_OFFSET;           //field location to update
+    clear_bits(f, loc, DESTINATION_WIDTH);  //clear field location
+    *f |= v << loc;                         //insert field value
 
-    set_parity_bit(f);      //update parity bit
+    set_parity_bit(f);                      //update parity bit
+}
+void set_headerflit_src_adrs(uint32_t *f, uint32_t v)
+{
+    int loc = SOURCE_OFFSET;            //field location to update
+    clear_bits(f, loc, SOURCE_WIDTH);   //clear field location
+    *f |= v << loc;                     //insert field value
+
+    set_parity_bit(f);                  //update parity bit
 }
 
-void set_headerflit_dest_adrs(unsigned int *f, unsigned int v)
+void set_first_bodyflit_id(uint32_t *f, uint32_t v)
 {
-    int loc = 13;           //field location to update
-    clear_bits(f, loc, 4);  //clear field location
-    *f |= v << loc;         //insert field value
+    int loc = PACKET_ID_OFFSET;             //field location to update
+    clear_bits(f, loc, PACKET_ID_WIDTH);    //clear field location
+    *f |= v << loc;                         //insert field value
 
-    set_parity_bit(f);      //update parity bit
-}
-void set_headerflit_src_adrs(unsigned int *f, unsigned int v)
-{
-    int loc = 9;            //field location to update
-    clear_bits(f, loc, 4);  //clear field location
-    *f |= v << loc;         //insert field value
-
-    set_parity_bit(f);      //update parity bit
+    set_parity_bit(f);                      //update parity bit
 }
 
-void set_headerflit_id(unsigned int *f, unsigned int v)
+void set_first_bodyflit_len(uint32_t *f, uint32_t v)
 {
-    int loc = 1;            //field location to update
-    clear_bits(f, loc, 8);  //clear field location
-    *f |= v << loc;         //insert field value
+    int loc = PACKET_LENGTH_OFFSET;             //field location to update
+    clear_bits(f, loc, PACKET_LENGTH_WIDTH);    //clear field location
+    *f |= v << loc;                             //insert field value
 
-    set_parity_bit(f);      //update parity bit
+    set_parity_bit(f);                          //update parity bit
 }
 
 /////////////////////////////////////////////////////
@@ -127,25 +129,47 @@ void set_headerflit_id(unsigned int *f, unsigned int v)
 ****************************
 Bits        Field
 31,30,29    001 (header flit)
-28-17       Length of the packet, upto 4096 flits.
-16-13       Destination router address
-12-9        Source router address.
-8-1         Packet ID
+28-15       Destination router address
+14-1        Source router address.
 0           Parity
 ****************************/
 //Make a header-flit in '*h_flit' with the given
-//length, destination address, source address and packet ID
-void make_header_flit(unsigned int *h_flit, unsigned int len, unsigned int dest_adrs, unsigned int src_adrs, unsigned int id)
+//destination address and source address
+uint32_t make_header_flit(uint32_t dest_adrs, uint32_t src_adrs)
 {
-    *h_flit = 0;
+
+    uint32_t *h_flit = new uint32_t(0);
 
     set_flit_type(h_flit, HEADER_FLIT);
 
-    set_headerflit_len(h_flit, len);
     set_headerflit_dest_adrs(h_flit, dest_adrs);
     set_headerflit_src_adrs(h_flit, src_adrs);
-    set_headerflit_id(h_flit, id);
+
+    return *h_flit;
 } //end void make_header_flit()
+
+/***************************
+** FIRST BODY flit encoding
+****************************
+Bits        Field
+31,30,29    010 (first body flit)
+28-15       Length of the packet, upto 16384 flits.
+14-1         Packet ID
+0           Parity
+****************************/
+//Make the first body flit in '*fb_flit' with the given
+//length and packet ID
+uint32_t make_first_body_flit(uint32_t len, uint32_t id)
+{
+    uint32_t *fb_flit = new uint32_t(0);
+
+    set_flit_type(fb_flit, BODY_FLIT);
+
+    set_first_bodyflit_len(fb_flit, len);
+    set_first_bodyflit_id(fb_flit, id);
+
+    return *fb_flit;
+} //end void make_first_body_flit()
 
 /***************************
 ** BODY flit encoding
@@ -155,7 +179,7 @@ Bits        Field
 28-1        Payload
 0           Parity
 ****************************/
-void set_bodyflit_payload(unsigned int *f, unsigned int v)
+void set_bodyflit_payload(uint32_t *f, uint32_t v)
 {
     int loc = 1;            //field location to update
     clear_bits(f, loc, 28); //clear field location
@@ -164,13 +188,15 @@ void set_bodyflit_payload(unsigned int *f, unsigned int v)
     set_parity_bit(f);      //update parity bit
 }
 //Make a body-flit in '*b_flit' with the given payload
-void make_body_flit(unsigned int *b_flit, unsigned int payld)
+uint32_t make_body_flit(uint32_t payld)
 {
-    *b_flit = 0;
+    uint32_t *b_flit = new uint32_t(0);
 
     set_flit_type(b_flit, BODY_FLIT);
 
     set_bodyflit_payload(b_flit, payld);
+
+    return *b_flit;
 } //end void make_body_flit()
 
 /***************************
@@ -182,7 +208,7 @@ Bits        Field
 28-1        Payload
 0           Parity
 ****************************/
-void set_tailflit_payload(unsigned int *f, unsigned int v)
+void set_tailflit_payload(uint32_t *f, uint32_t v)
 {
     int loc = 1;            //field location to update
     clear_bits(f, loc, 28); //clear field location
@@ -191,13 +217,15 @@ void set_tailflit_payload(unsigned int *f, unsigned int v)
     set_parity_bit(f);      //update parity bit
 }
 //Make a tail-flit in '*t_flit' with the given payload
-void make_tail_flit(unsigned int *t_flit, unsigned int payld)
+uint32_t make_tail_flit(uint32_t payld)
 {
-    *t_flit = 0;
+    uint32_t *t_flit = new uint32_t(0);
 
     set_flit_type(t_flit, TAIL_FLIT);
 
     set_tailflit_payload(t_flit, payld);
+
+    return *t_flit;
 } //end void make_tail_flit()
 
 ////////////////////////////////////////////////////////////////
@@ -211,31 +239,58 @@ void make_tail_flit(unsigned int *t_flit, unsigned int payld)
 ****************************
 Bits        Field
 31,30,29    001 (header flit)
-28-17       Length of the packet, upto 4096 flits.
-16-13       Destination router address
-12-9        Source router address.
-8-1         Packet ID
+28-15       Destination router address
+15-1        Source router address.
 0           Parity
 ****************************/
 //From header 'flit' return error=1 otherwise get
-//length, destination address, source address, packet ID and parity
-unsigned int parse_header_flit(unsigned int flit, unsigned int *len, unsigned int *dest_adrs, unsigned int *src_adrs, unsigned int *id, unsigned int *p)
+//destination address, source address, and parity
+uint32_t parse_header_flit(uint32_t flit, uint16_t *dest_adrs, uint16_t *src_adrs, uint8_t *p)
 {
 
     //check flit-type field(bits 31,30,29) to indicate HEADER_FLIT,
     //return 1 on error
-    unsigned int flit_type = get_bit_range(flit, 29, 3);
+    uint16_t flit_type = get_bit_range(flit, FLIT_TYPE_OFFSET, FLIT_TYPE_WIDTH);
     if(flit_type != HEADER_FLIT)
     {
         printf("Error! Got unexpected flit-type(%d) for header-flit type(%d)\n", flit_type, HEADER_FLIT);
         return 1;
     }
 
-    *len        = get_bit_range(flit, 17, 28-17+1);
-    *dest_adrs  = get_bit_range(flit, 13, 16-13+1);
-    *src_adrs   = get_bit_range(flit, 9, 12-9+1);
-    *id         = get_bit_range(flit, 1, 8-1+1);
-    *p          = get_bit_range(flit, 0, 1);
+    *dest_adrs  = get_bit_range(flit, DESTINATION_OFFSET, DESTINATION_WIDTH);
+    *src_adrs   = get_bit_range(flit, SOURCE_OFFSET, SOURCE_WIDTH);
+    *p          = get_bit_range(flit, PARITY_OFFSET, PARITY_WIDTH);
+
+    return 0; //No error
+} //end parse_header_flit()
+
+
+/***************************
+** FIRST BODY flit encoding
+****************************
+Bits        Field
+31,30,29    010 (body flit)
+28-15       Length of the packet, upto 4096 flits.
+14-1        Packet ID
+0           Parity
+****************************/
+//From header 'flit' return error=1 otherwise get
+//length, packet ID and parity
+uint32_t parse_first_body_flit(uint32_t flit, uint16_t *len, uint16_t *id, uint8_t *p)
+{
+
+    //check flit-type field(bits 31,30,29) to indicate HEADER_FLIT,
+    //return 1 on error
+    uint32_t flit_type = get_bit_range(flit, FLIT_TYPE_OFFSET, FLIT_TYPE_WIDTH);
+    if(flit_type != BODY_FLIT)
+    {
+        printf("Error! Got unexpected flit-type(%d) for body-flit type(%d)\n", flit_type, HEADER_FLIT);
+        return 1;
+    }
+
+    *len        = get_bit_range(flit, PACKET_LENGTH_OFFSET, PACKET_LENGTH_WIDTH);
+    *id         = get_bit_range(flit, PACKET_ID_OFFSET, PACKET_ID_WIDTH);
+    *p          = get_bit_range(flit, PARITY_OFFSET, PARITY_WIDTH);
 
     return 0; //No error
 } //end parse_header_flit()
@@ -249,11 +304,11 @@ Bits        Field
 0           Parity
 ****************************/
 //From body 'flit' return error=1 otherwise get payload and parity
-unsigned int parse_body_flit(unsigned int flit, unsigned int *payload, unsigned int *p)
+uint32_t parse_body_flit(uint32_t flit, uint32_t *payload, uint8_t *p)
 {
     //check flit-type field(bits 31,30,29) to indicate BODY_FLIT,
     //return 1 on error
-    unsigned int flit_type = get_bit_range(flit, 29, 3);
+    uint32_t flit_type = get_bit_range(flit, 29, 3);
     if(flit_type != BODY_FLIT)
     {
         printf("Error! Got unexpected flit-type(%d) for body-flit type(%d)\n", flit_type, BODY_FLIT);
@@ -276,11 +331,11 @@ Bits        Field
 0           Parity
 ****************************/
 //From tail 'flit' return error=1 otherwise get payload and parity
-unsigned int parse_tail_flit(unsigned int flit, unsigned int *payload, unsigned int *p)
+uint32_t parse_tail_flit(uint32_t flit, uint32_t *payload, uint8_t *p)
 {
     //check flit-type field(bits 31,30,29) to indicate TAIL_FLIT,
     //return 1 on error
-    unsigned int flit_type = get_bit_range(flit, 29, 3);
+    uint32_t flit_type = get_bit_range(flit, 29, 3);
     if(flit_type != TAIL_FLIT)
     {
         printf("Error! Got unexpected flit-type(%d) for tail-flit type(%d)\n", flit_type, TAIL_FLIT);
@@ -292,4 +347,3 @@ unsigned int parse_tail_flit(unsigned int flit, unsigned int *payload, unsigned 
 
     return 0; //No error
 } //end parse_tail_flit()
-
