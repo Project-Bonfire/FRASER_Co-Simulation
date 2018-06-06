@@ -8,7 +8,7 @@
 
 #include <cstdint>
 #include <memory>
-#include "router.hpp"
+#include "test_router/router.hpp"
 
 enum class GenerationModes {counter}; // TODO: Add other modes
 

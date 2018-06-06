@@ -6,7 +6,7 @@
 #define __ROUTER_HPP__
 
 #include <memory>
-#include "packet_sink.hpp"
+#include "packet_sink/packet_sink.hpp"
 
 class Router {
 public:
