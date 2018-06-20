@@ -4,9 +4,9 @@
  */
 
 #include <memory>
-#include "packet_generator/packet_generator.hpp"
-#include "packet_sink/packet_sink.hpp"
-#include "test_router/router.hpp"
+#include "packet_generator.hpp"
+#include "packet_sink.hpp"
+#include "router.hpp"
 
 int main(){
 

@@ -2,17 +2,15 @@
 PROG_NAME = traffic_gen
 
 # Directories
-BONFIRE_ROOT   = ../../
-SOURCEDIR 	   = .
-LIBDIR 		   = ../../inc
-LIBDIR 		   = ../../ip
-TRAFFIC_LIBDIR = ./traffic_test_inc
-TRAFFIC_LIBDIR = ../../../ip/test_router/
-BUILDDIR	   = build
-# UTIL_FOLDER = $(BONFIRE_ROOT)/tmp/bin/plasma_utils
-# SIMUL_TEMP	= $(BONFIRE_ROOT)/tmp/simul_temp
+SOURCEDIR 	     = .
 
-INC=$(TRAFFIC_LIBDIR)/ $(LIBDIR)/
+PE_DIR 		       = ../../ip/test_processing_element
+TEST_ROUTER_DIR  = ../../ip/test_router
+FLIT_UTILS_DIR   = ../../utils/flit_utils
+
+BUILDDIR	       = build
+
+INC=$(TEST_ROUTER_DIR)/ $(PE_DIR)/ $(SOURCEDIR)/ $(FLIT_UTILS_DIR)/
 INC_PARAMS=$(foreach d, $(INC), -I$d)
 
 # Compiler flags
@@ -34,23 +32,23 @@ LD 	 = ld
 RM = rm -rf
 
 # Program sources
-PROG_C_SOURCES	= $(wildcard $(SOURCEDIR)/*.cpp)
-PROG_MAIN_SRCS	= $(wildcard $(SOURCEDIR)/traffic_generation.cpp)
+
+PROG_MAIN_SRCS	    = $(wildcard $(SOURCEDIR)/traffic_generation.cpp)
+PROG_C_SOURCES      = $(wildcard $(SOURCEDIR)/*.cpp)
+PE_SOURCES 	        = $(wildcard $(PE_DIR)/*.cpp)
+TEST_ROUTER_SOURCES = $(wildcard $(TEST_ROUTER_DIR)/*.cpp)
+FLIT_UTILS_SOURCES  = $(wildcard $(FLIT_UTILS_DIR)/*.cpp)
 
 PROG_SOURCES 	= $(filter-out $(PROG_MAIN_SRCS),$(PROG_C_SOURCES))
 
-# Library sources
-LIB_ASM_SOURCES  = $(wildcard $(LIBDIR)/*.asm)
-LIB_SOURCES 	 = $(wildcard $(LIBDIR)/*.cpp)
-TRAFFIC_LIB_SRCS = $(wildcard $(TRAFFIC_LIBDIR)/*.cpp)
-
 # Object files
-PROG_OBJECTS	  = $(patsubst $(SOURCEDIR)/%.cpp,$(BUILDDIR)/%.o,$(PROG_SOURCES))
+PROG_OBJECTS	    = $(patsubst $(SOURCEDIR)/%.cpp,$(BUILDDIR)/%.o,$(PROG_SOURCES))
 PROG_MAIN_OBJECTS = $(patsubst $(SOURCEDIR)/%.cpp,$(BUILDDIR)/%.o,$(PROG_MAIN_SRCS))
 
-LIB_OBJECTS 		= $(patsubst $(LIBDIR)/%.cpp,$(BUILDDIR)/%.o,$(LIB_SOURCES))
-TRAFFIC_LIB_OBJECTS = $(patsubst $(TRAFFIC_LIBDIR)/%.cpp,$(BUILDDIR)/%.o,$(TRAFFIC_LIB_SRCS))
-LIB_ASM_OBJECTS 	= $(patsubst $(LIBDIR)/%.asm,$(BUILDDIR)/%.o,$(LIB_ASM_SOURCES))
+PE_OBJECTS          = $(patsubst $(SOURCEDIR)/%.cpp,$(BUILDDIR)/%.o,$(PE_SOURCES))
+TEST_ROUTER_OBJECTS = $(patsubst $(SOURCEDIR)/%.cpp,$(BUILDDIR)/%.o,$(TEST_ROUTER_SOURCES))
+FLIT_UTILS_OBJECTS  = $(patsubst $(SOURCEDIR)/%.cpp,$(BUILDDIR)/%.o,$(FLIT_UTILS_SOURCES))
+
 
 
 # Rules
@@ -63,20 +61,20 @@ dir:
 	mkdir -p $(BUILDDIR)
 
 # Build the executable
-elf_files: $(LIB_ASM_OBJECTS) $(TRAFFIC_LIB_OBJECTS) $(LIB_OBJECTS) $(PROG_OBJECTS) $(PROG_MAIN_OBJECTS)
+elf_files: $(PE_OBJECTS) $(TEST_ROUTER_OBJECTS) $(FLIT_UTILS_OBJECTS) $(PROG_OBJECTS) $(PROG_MAIN_OBJECTS)
 	$(foreach prog,$(PROG_MAIN_OBJECTS),\
 		$(CC) $(CFLAGS) -o $(prog:%.o=%) \
-		$(LIB_ASM_OBJECTS) $(TRAFFIC_LIB_OBJECTS) $(LIB_OBJECTS) $(PROG_OBJECTS) $(prog);)
+		$(PE_OBJECTS) $(TEST_ROUTER_OBJECTS) $(FLIT_UTILS_OBJECTS) $(PROG_OBJECTS) $(prog);)
 	#$(LD) $(LDFLAGS) -o $@ $^
 
 # Build library related files
-$(TRAFFIC_LIB_OBJECTS): $(BUILDDIR)/%.o : $(TRAFFIC_LIBDIR)/%.cpp
+$(PE_OBJECTS): $(BUILDDIR)/%.o : $(PE_DIR)/%.cpp
 	$(CC) -c $(CFLAGS) -o $@ $^
 
-$(LIB_ASM_OBJECTS): $(BUILDDIR)/%.o : $(LIBDIR)/%.asm
-	$(AS) $(ASFLAGS) -o $@ $^
+$(TEST_ROUTER_OBJECTS): $(BUILDDIR)/%.o : $(TEST_ROUTER_DIR)/%.asm
+	$(CC) -c $(CFLAGS) -o $@ $^
 
-$(LIB_OBJECTS): $(BUILDDIR)/%.o : $(LIBDIR)/%.cpp
+$(FLIT_UTILS_OBJECTS): $(BUILDDIR)/%.o : $(FLIT_UTILS_DIR)/%.cpp
 	$(CC) -c $(CFLAGS) -o $@ $^
 
 # Build program sources
@@ -87,19 +85,6 @@ $(PROG_MAIN_OBJECTS): $(BUILDDIR)/%.o : $(SOURCEDIR)/%.cpp
 	@$(CC) -c $(CFLAGS) -o $@ $^
 
 Makefile: ;
-
-# # Generate code.txt files
-# code_txt:
-# 	@if [ ! -f $(UTIL_FOLDER)/convert_to_bin ]; then \
-# 		echo "Plasma utils not compiled. I will compile them for you" && \
-# 		echo && cd $(BONFIRE_ROOT)/Tools/Plasma_Utils/ && \
-# 		make clean && make all; \
-# 	fi
-# 	$(foreach prog,$(PROG_MAIN_OBJECTS),\
-# 		$(UTIL_FOLDER)/convert_to_bin \
-# 		-i $(prog:%.o=%).elf \
-# 		-t $(SIMUL_TEMP)/code_$(shell echo $(prog) | tail -c 4 | head -c 1).txt;)
-
 
 clean:
 	-$(RM) $(BUILDDIR)
