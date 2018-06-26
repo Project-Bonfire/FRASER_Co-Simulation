@@ -15,8 +15,9 @@ int main(){
 	std::shared_ptr<Router> router = std::make_shared<Router>(packet_sink);
 	std::shared_ptr<PacketGenerator> packet_generator = std::make_shared<PacketGenerator>(2, router);
 
-	/* Send a packet */
+	/* Generate and send a packet */
 	packet_generator -> generate_packet(10, 1, GenerationModes::counter);
+	packet_generator -> send_packet();
 
 	return 0;
 }

@@ -45,7 +45,7 @@ uint16_t PacketSink::calculate_crc() {
 
     /* Calculate CRC of the packet (ignoring the tail flit) */
     // TODO: Add tail flit error checking
-    result.process_bytes(&m_recvd_packet.packet[0], m_recvd_packet.packet.size() - 1);
+    result.process_bytes(&m_recvd_packet.raw_data[0], m_recvd_packet.raw_data.size() - 1);
 
     return result.checksum();
 }
@@ -57,7 +57,7 @@ uint16_t PacketSink::calculate_crc() {
  *  The CRC extracted from the tail flit
  */
 uint16_t PacketSink::extract_crc() {
-    auto *tail_flit = &m_recvd_packet.packet[m_recvd_packet.packet.size() - 1];
+    auto *tail_flit = &m_recvd_packet.raw_data[m_recvd_packet.raw_data.size() - 1];
     auto tail_payload = get_bit_range(*tail_flit, 1, 28);
     uint16_t recvd_crc = tail_payload | 0xFFFF0000;
 
@@ -85,7 +85,7 @@ void PacketSink::log_packet(bool faulty) {
             << ", Src: " << m_recvd_packet.src_addr
             << ", Dst: " << m_recvd_packet.dst_addr
             << ", Encoded length: " << m_recvd_packet.packet_length
-            << ", Counted length: " << m_recvd_packet.packet.size()
+            << ", Counted length: " << m_recvd_packet.raw_data.size()
             << ", Encoded CRC: 0x" << std::hex << extracted_crc
             << ", Calculated CRC: 0x" << std::hex << calculated_crc
             << std::dec << ", time: " << "N/A"  // TODO: Add time
@@ -115,7 +115,7 @@ void PacketSink::send_flit_to_local(uint32_t flit) {
             if (flit_type == HEADER_FLIT) {
                 m_recv_error = false;
                 parse_header_flit(flit, &m_recvd_packet.dst_addr,  &m_recvd_packet.src_addr, &parity);
-                m_recvd_packet.packet.push_back(flit);
+                m_recvd_packet.raw_data.push_back(flit);
                 m_next_state = PacketStates::wait_first_body;
 
             } else {
@@ -129,7 +129,7 @@ void PacketSink::send_flit_to_local(uint32_t flit) {
             if (flit_type == BODY_FLIT) {
                 m_recv_error = false;
                 parse_first_body_flit(flit, &m_recvd_packet.packet_length,  &m_recvd_packet.packet_id, &parity);
-                m_recvd_packet.packet.push_back(flit);
+                m_recvd_packet.raw_data.push_back(flit);
                 m_next_state = PacketStates::wait_tail;
 
             } else {
@@ -146,13 +146,13 @@ void PacketSink::send_flit_to_local(uint32_t flit) {
 
             if (flit_type == BODY_FLIT) {
                 m_recv_error = false;
-                m_recvd_packet.packet.push_back(flit);
+                m_recvd_packet.raw_data.push_back(flit);
                 m_next_state = PacketStates::wait_tail;
             }
 
             else if (flit_type == TAIL_FLIT){
                 m_recv_error = false;
-                m_recvd_packet.packet.push_back(flit);
+                m_recvd_packet.raw_data.push_back(flit);
                 m_next_state = PacketStates::wait_header;
 
                 log_packet();

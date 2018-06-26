@@ -26,6 +26,7 @@ PacketGenerator::PacketGenerator(uint16_t address, std::shared_ptr<Router> route
 	m_address = address;
 	m_packet_id = 0;
 	m_router = router;
+	m_checksum = 0;
 }
 
 /*
@@ -36,27 +37,24 @@ PacketGenerator::PacketGenerator(uint16_t address, std::shared_ptr<Router> route
  * 	uint16_t packet_length                        - Length of the packet in flits
  * 	uint16_t destination                          - Destination address for the packet
  */
-uint16_t PacketGenerator::counter_based_generation(std::shared_ptr<std::vector<uint32_t>> packet,
-													uint16_t packet_length, uint16_t destination) {
+void PacketGenerator::counter_based_generation() {
 	boost::crc_ccitt_type result;
 
 	/* Build headers */
-	packet->push_back(make_header_flit(destination, m_address));
-	packet->push_back(make_first_body_flit(packet_length, m_packet_id));
+	m_generated_packet->raw_data.push_back(make_header_flit(m_generated_packet->dst_addr, m_generated_packet->src_addr));
+	m_generated_packet->raw_data.push_back(make_first_body_flit(m_generated_packet->packet_length, m_packet_id));
 
 	/* Make data flits */
-	for (size_t i=2; i < packet_length - 1; i++){
-		packet->push_back(make_body_flit(i));
+	for (int i=2; i < m_generated_packet->packet_length - 1; i++){
+		m_generated_packet->raw_data.push_back(make_body_flit(i));
 	}
 	/* Calculate result of the packet (ignoring the tail flit) */
-    result.process_bytes(&packet->at(0), packet->size()); // TODO: include tail flit
+    result.process_bytes(&m_generated_packet->raw_data.at(0), m_generated_packet->raw_data.size()); // TODO: include tail flit
 
-	auto checksum = result.checksum();
+	m_checksum = result.checksum();
 
 	/* Store checksum in the tail */
-	packet->push_back(make_tail_flit(checksum));
-
-	return checksum;
+	m_generated_packet->raw_data.push_back(make_tail_flit(m_checksum));
 }
 
 
@@ -69,45 +67,63 @@ uint16_t PacketGenerator::counter_based_generation(std::shared_ptr<std::vector<u
  * 							 (in packets, including headers and tail)
  * 	uint16_t destination   - Destination address of the packet
  * 	GenerationModes mode   - Mode to use for data generation
+ *
+ * Returns:
+ * 	Generated packet
  */
 void PacketGenerator::generate_packet(uint16_t packet_length, uint16_t destination,
-										GenerationModes mode) {
-	std::stringstream log_stream;
+									  GenerationModes mode) {
 
-	// std::vector<uint32_t> packet;
-	std::shared_ptr<std::vector<uint32_t>> packet = std::make_shared<std::vector<uint32_t>>();
-	uint16_t checksum;
+	/* Make a new packet struct */
+	m_generated_packet = std::make_shared<Packet>();
+
+	m_generated_packet -> packet_length = packet_length;
+	m_generated_packet -> dst_addr = destination;
+	m_generated_packet -> src_addr = m_address;
 
 	/* Packet generation */
 	// TODO: Add more modes (like random)
 	switch (mode) {
 		case GenerationModes::counter:
-			checksum = counter_based_generation(packet, packet_length, destination);
+			counter_based_generation();
 			break;
 
 		default:
 			std::cerr << "Unknown data generation mode!" << std::endl;
 			return;
 	}
+}
+
+/*
+ * Sends a packet
+ *
+ * Parameters:
+ * 	std::shared_ptr<std::vector<uint32_t>> packet - Packet to be sent. Destination is
+ * 													automatically read from the packet
+ */
+
+void PacketGenerator::send_packet(){
+	std::stringstream log_stream;
 
 	/* Send the packet */
-	for (size_t i=0; i < packet->size(); i++) {
-		m_router->send_flit_to_router(packet->at(i));
+	for (size_t i=0; i < m_generated_packet->raw_data.size(); i++) {
+		m_router->send_flit_to_router(m_generated_packet->raw_data.at(i));
 	}
 
-	/* Packet ID will increase after every sent packet */
-	m_packet_id++;
 
 	/* Logging */
-	log_stream << "Sent_" << m_address << " - "
+	log_stream << "Sent_" << m_generated_packet->src_addr << " - "
 		<< "ID: " << m_packet_id
-		<< ", Dst: " << destination
-		<< ", Length: " << packet_length
-		<< ", CRC: 0x" << std::hex << checksum
+		<< ", Dst: " << m_generated_packet->dst_addr
+		<< ", Length: " << m_generated_packet->packet_length
+		<< ", CRC: 0x" << std::hex << m_checksum
 		<< std::dec << ", time: " << "N/A"  // TODO: Add time
 		<< std::endl;
 
 	// TODO: Better logging than just printing on the screen??
     std::string log_line  = log_stream.str();
 	std::cout << log_line;
+
+	/* Packet ID will increase after every sent packet */
+	m_packet_id++;
 }
