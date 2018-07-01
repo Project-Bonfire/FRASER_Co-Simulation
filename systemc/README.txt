@@ -9,6 +9,13 @@ INSTALL
 Once the downloaded tarball is unzipped,
 the README file mentions the platforms tested with this release of SystemC
 and the INSTALL file details the installation instructions.
+In order to make SystemC for c++14, proceed as follows:
+- mkdir objdir
+- cd objdir
+- ../configure CXXFLAGS="-std=c++14"
+- gmake
+- gmake install
+The above will SystemC library for c++14 and place in ../lib-linux64/
 
 USING IN FRASER
 Suppose the SystemC is installed at /path/to/systemc-2.3.2
