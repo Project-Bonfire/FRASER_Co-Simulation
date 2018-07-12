@@ -14,7 +14,7 @@ INC=$(TEST_ROUTER_DIR)/ $(PE_DIR)/ $(SOURCEDIR)/ $(FLIT_UTILS_DIR)/
 INC_PARAMS=$(foreach d, $(INC), -I$d)
 
 # Compiler flags
-CFLAGS = -Wall -std=c++1y
+CFLAGS = -Wall -std=c++1y -DNO_SYSTEMC
 CFLAGS += $(INC_PARAMS)
 
 # Toolchain commands

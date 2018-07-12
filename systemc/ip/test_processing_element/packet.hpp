@@ -1,6 +1,8 @@
 #ifndef __PACKET_HPP__
 #define __PACKET_HPP__
 
+#include <vector>
+
 struct Packet {
     uint16_t address;
     uint16_t src_addr;

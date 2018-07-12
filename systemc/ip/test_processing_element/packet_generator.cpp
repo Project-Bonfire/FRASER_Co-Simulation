@@ -12,7 +12,10 @@
 #include <boost/crc.hpp>
 #include "packet_generator.hpp"
 #include "flit_utils.hpp"
+
+#ifdef NO_SYSTEMC
 #include "router.hpp"
+#endif
 
 /*
  * Constructor
@@ -22,12 +25,21 @@
  * 	std::shared_ptr<Router> router - Pointer to the router (input port) instance
  * 					                 the packet generator is connected to
  */
+#ifdef NO_SYSTEMC
 PacketGenerator::PacketGenerator(uint16_t address, std::shared_ptr<Router> router) {
 	m_address = address;
 	m_packet_id = 0;
 	m_router = router;
 	m_checksum = 0;
 }
+#else
+PacketGenerator::PacketGenerator(uint16_t address) {
+	m_address = address;
+	m_packet_id = 0;
+	//m_router = router;
+	m_checksum = 0;
+}
+#endif
 
 /*
  * Generates a packet by increasing the value stored in each flit by 1, starting from 0.
@@ -102,6 +114,7 @@ void PacketGenerator::generate_packet(uint16_t packet_length, uint16_t destinati
  * 													automatically read from the packet
  */
 
+#ifdef NO_SYSTEMC
 void PacketGenerator::send_packet(){
 	std::stringstream log_stream;
 
@@ -127,3 +140,4 @@ void PacketGenerator::send_packet(){
 	/* Packet ID will increase after every sent packet */
 	m_packet_id++;
 }
+#endif
