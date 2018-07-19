@@ -1,5 +1,12 @@
 ## Set to your local SystemC installation path
-SYSTEMC_HOME=/home/saifabrar/systemc/systemc-2.3.2
+
+ifdef SYS_C_PATH
+  SYSTEMC_HOME = $(SYS_C_PATH)
+else
+  SYSTEMC_HOME = ~/systemc/systemc-2.3.2
+endif
+
+
 
 ## Select the TARGET_ARCH
 TARGET_ARCH      = linux64
