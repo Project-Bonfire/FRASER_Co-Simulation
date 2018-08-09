@@ -11,11 +11,13 @@ using namespace std;
 
 #include "packet_generator.hpp"
 
-struct Initiator: sc_module
+struct sc_pkt_gen: sc_module
                   , PacketGenerator
 {
-    tlm_utils::simple_initiator_socket<Initiator> socket;
-    SC_CTOR(Initiator) : socket("socket")
+    // TLM-2 socket, defaults to 32-bits wide, base protocol
+    tlm_utils::simple_initiator_socket<sc_pkt_gen> socket;
+
+    SC_CTOR(sc_pkt_gen) : socket("socket")
                          , PacketGenerator(2)
     {
         SC_THREAD(thread_process);
@@ -23,49 +25,43 @@ struct Initiator: sc_module
 
     void thread_process()
     {
-        cout << endl << "In thread_process" << endl;
+        cout << endl << "In pkt-gen thread_process" << endl;
 	
-        cout << "Generating pkt" << endl;
-        generate_packet(10, 1, GenerationModes::counter);
-        int cnt = get_packet_count();
-        for(int i=0; i<cnt; i++)
-        {
-            cout << "Pkt-" << dec << i << ": 0x" << hex << get_packet_at(i) << endl;
-        }
-
+        // TLM-2 generic payload transaction, reused across calls to b_transport
         tlm::tlm_generic_payload* trans = new tlm::tlm_generic_payload;
         sc_time delay = sc_time(10, SC_NS);
 
         int data;
-        int i = 4;
-        tlm::tlm_command cmd = static_cast<tlm::tlm_command>(rand() % 2);
-        //static_cast(rand() % 2);
-        if (cmd == tlm::TLM_WRITE_COMMAND) data = 0xFF000000 | i;
 
-        trans->set_command( cmd );
-        trans->set_address( i );
-        data=0x100;
-        trans->set_data_ptr( reinterpret_cast<unsigned char*>(&data) );
-        trans->set_data_length( 4 );
-        trans->set_streaming_width( 4 );
-        trans->set_byte_enable_ptr( 0 );
-        trans->set_dmi_allowed( false );
-        trans->set_response_status( tlm::TLM_INCOMPLETE_RESPONSE );
+        cout << "Generating packets..." << endl;
+        generate_packet(10, 1, GenerationModes::counter);
 
-        cout << endl << "Starting from Initiator" << endl;
-        socket->b_transport( *trans, delay ); //blocking call
-        cout << endl << "Done from Initiator" << endl;
-
-        if ( trans->is_response_error() )
+        // Send packets 1-by-1
+        int cnt = get_packet_count();
+        for(int i=0; i<cnt; i++)
         {
-            char txt[100];
-            sprintf(txt, "Error from b_transport, response status = %s",
-                    trans->get_response_string().c_str());
-            SC_REPORT_ERROR("TLM-2", txt);
+            // get next packet
+            data = get_packet_at(i);
 
-        }
+            // set the transaction
+            trans->set_data_ptr( reinterpret_cast<unsigned char*>(&data) );
+            trans->set_data_length( 4 );
+            trans->set_streaming_width( 4 );
+            trans->set_byte_enable_ptr( 0 );
+            trans->set_dmi_allowed( false );
+            trans->set_response_status( tlm::TLM_INCOMPLETE_RESPONSE );
 
-    }
+            cout << "Gen sending pkt-" << dec << i << ": 0x" << hex << data << endl;
+            socket->b_transport( *trans, delay ); //blocking call
 
+            if ( trans->is_response_error() )
+            {
+                char txt[100];
+                sprintf(txt, "Error from b_transport, response status = %s",
+                        trans->get_response_string().c_str());
+                SC_REPORT_ERROR("TLM-2", txt);
+            }
+        } //for(int i=0; i<cnt; i++)
+    } //void thread_process()
 };
 

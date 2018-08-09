@@ -14,16 +14,15 @@ using namespace std;
 
 SC_MODULE(Top)
 {
-    Initiator *initiator;
-    Target    *target;
+    sc_pkt_gen  *my_pkt_gen;
+    sc_pkt_sink *my_pkt_sink;
 
     SC_CTOR(Top)
     {
-        initiator = new Initiator("initiator");
-        target    = new Target   ("target");
-        initiator->socket.bind( target->socket );
+        my_pkt_gen  = new sc_pkt_gen("my_pkt_gen");
+        my_pkt_sink = new sc_pkt_sink   ("my_pkt_sink");
+        my_pkt_gen->socket.bind( my_pkt_sink->socket );
     }
-
 };
 
 int sc_main(int argc, char* argv[])
@@ -32,6 +31,7 @@ int sc_main(int argc, char* argv[])
 
     Top top("top");
     sc_start();
+
     return 0;
 }
 
