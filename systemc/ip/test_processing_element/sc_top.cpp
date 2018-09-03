@@ -1,3 +1,4 @@
+#ifndef NO_SYSTEMC
 #define SC_INCLUDE_DYNAMIC_PROCESSES
 
 #include "systemc"
@@ -34,4 +35,4 @@ int sc_main(int argc, char* argv[])
 
     return 0;
 }
-
+#endif // NO_SYSTEMC
