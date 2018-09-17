@@ -174,7 +174,7 @@ uint32_t PacketGenerator::getFlit(uint64_t time){
 	std::stringstream logStream;
 	auto flitNum = mCounter - mStartupDelay + 1;
 	std::string logLine;
-	uint32_t flit;
+	uint32_t flit = 0;
 
 	mCounter++;
 

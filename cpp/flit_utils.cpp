@@ -138,15 +138,14 @@ Bits        Field
 //destination address and source address
 uint32_t make_header_flit(uint32_t dest_adrs, uint32_t src_adrs)
 {
+    uint32_t h_flit = 0;
 
-    uint32_t *h_flit = new uint32_t(0);
+    set_flit_type(&h_flit, HEADER_FLIT);
 
-    set_flit_type(h_flit, HEADER_FLIT);
+    set_headerflit_dest_adrs(&h_flit, dest_adrs);
+    set_headerflit_src_adrs(&h_flit, src_adrs);
 
-    set_headerflit_dest_adrs(h_flit, dest_adrs);
-    set_headerflit_src_adrs(h_flit, src_adrs);
-
-    return *h_flit;
+    return h_flit;
 } //end void make_header_flit()
 
 /***************************
@@ -162,14 +161,14 @@ Bits        Field
 //length and packet ID
 uint32_t make_first_body_flit(uint32_t len, uint32_t id)
 {
-    uint32_t *fb_flit = new uint32_t(0);
+    uint32_t fb_flit = 0;
 
-    set_flit_type(fb_flit, BODY_FLIT);
+    set_flit_type(&fb_flit, BODY_FLIT);
 
-    set_first_bodyflit_len(fb_flit, len);
-    set_first_bodyflit_id(fb_flit, id);
+    set_first_bodyflit_len(&fb_flit, len);
+    set_first_bodyflit_id(&fb_flit, id);
 
-    return *fb_flit;
+    return fb_flit;
 } //end void make_first_body_flit()
 
 /***************************
@@ -191,13 +190,13 @@ void set_bodyflit_payload(uint32_t *f, uint32_t v)
 //Make a body-flit in '*b_flit' with the given payload
 uint32_t make_body_flit(uint32_t payld)
 {
-    uint32_t *b_flit = new uint32_t(0);
+    uint32_t b_flit = 0;
 
-    set_flit_type(b_flit, BODY_FLIT);
+    set_flit_type(&b_flit, BODY_FLIT);
 
-    set_bodyflit_payload(b_flit, payld);
+    set_bodyflit_payload(&b_flit, payld);
 
-    return *b_flit;
+    return b_flit;
 } //end void make_body_flit()
 
 /***************************
@@ -220,13 +219,13 @@ void set_tailflit_payload(uint32_t *f, uint32_t v)
 //Make a tail-flit in '*t_flit' with the given payload
 uint32_t make_tail_flit(uint32_t payld)
 {
-    uint32_t *t_flit = new uint32_t(0);
+    uint32_t t_flit = 0;
 
-    set_flit_type(t_flit, TAIL_FLIT);
+    set_flit_type(&t_flit, TAIL_FLIT);
 
-    set_tailflit_payload(t_flit, payld);
+    set_tailflit_payload(&t_flit, payld);
 
-    return *t_flit;
+    return t_flit;
 } //end void make_tail_flit()
 
 ////////////////////////////////////////////////////////////////
