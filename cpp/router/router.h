@@ -1,18 +1,13 @@
 /*
- * Copyright (c) 2018, German Aerospace Center (DLR)
- *
- * This file is part of the development version of FRASER.
- *
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * This Source Code Form is subject to the terms
+ * of the *GNU GENERAL PUBLIC LICENSE Version 3*.
  *
  * Authors:
- *  2018, Annika Ofenloch (DLR RYAVS)
+ *  - 2018, Annika Ofenloch (DLR RY-AVS)
  */
 
-#ifndef FRASER_TEMPLATE_MODELS_ROUTER_ROUTER_H_
-#define FRASER_TEMPLATE_MODELS_ROUTER_ROUTER_H_
+#ifndef __ROUTER_H__
+#define __ROUTER_H__
 
 #include <fstream>
 #include <queue>
@@ -21,14 +16,13 @@
 #include <bitset>
 #include <iostream>
 
-#include "flit_utils.h"
+#include "utils/flit_utils.h"
 
 #define NOC_SIZE 2
 
 class Router {
 public:
-
-	Router();
+	Router(){}
 
 	enum Request
 		: uint8_t {
@@ -116,4 +110,4 @@ private:
 	void generateRequest(uint32_t flit, Request& request);
 };
 
-#endif /* FRASER_TEMPLATE_MODELS_ROUTER_ROUTER_H_ */
+#endif /* __ROUTER_H__ */

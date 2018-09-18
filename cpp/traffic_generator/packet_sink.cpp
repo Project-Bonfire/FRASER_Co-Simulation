@@ -11,7 +11,7 @@
 #include <bitset>
 #include <boost/crc.hpp>
 
-#include "flit_utils.h"
+#include "utils/flit_utils.h"
 
 #define COLOR_RED       "\033[1;31m"
 #define COLOR_GREEN     "\033[1;32m"
