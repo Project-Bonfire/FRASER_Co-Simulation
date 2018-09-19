@@ -18,11 +18,10 @@
 
 #include "utils/flit_utils.h"
 
-#define NOC_SIZE 2
-
 class Router {
 public:
-	Router(){}
+	Router() {
+	}
 
 	enum Request
 		: uint8_t {
@@ -43,6 +42,10 @@ public:
 	void increaseCreditCntSouth();
 
 	// Getter & Setter
+	void setNocSize(uint16_t size) {
+		mNocSize = size;
+	}
+
 	void setAddress(uint16_t address) {
 		mCurrentAddr = address;
 	}
@@ -69,6 +72,7 @@ public:
 
 private:
 	uint64_t mCycles = 0; // TODO: Forward Flit after 3 Cycles
+	uint16_t mNocSize = 0;
 	uint16_t mCurrentAddr = 0;
 	std::bitset<16> mConnectivityBits = 0;
 	std::bitset<16> mRoutingBits = 0;

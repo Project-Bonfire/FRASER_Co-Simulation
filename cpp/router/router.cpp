@@ -113,10 +113,10 @@ void Router::generateRequest(uint32_t flit, Request& request) {
 	bool n1 = false, e1 = false, w1 = false, s1 = false;
 	parse_header_flit(flit, &dstAddr, &srcAddr, &parity);
 
-	uint16_t des_addr_x = dstAddr % NOC_SIZE;
-	uint16_t cur_addr_x = mCurrentAddr % NOC_SIZE;
-	uint16_t des_addr_y = dstAddr / NOC_SIZE;
-	uint16_t cur_addr_y = mCurrentAddr / NOC_SIZE;
+	uint16_t des_addr_x = dstAddr % mNocSize;
+	uint16_t cur_addr_x = mCurrentAddr % mNocSize;
+	uint16_t des_addr_y = dstAddr / mNocSize;
+	uint16_t cur_addr_y = mCurrentAddr / mNocSize;
 
 	if (des_addr_y < cur_addr_y) {
 		n1 = true;
