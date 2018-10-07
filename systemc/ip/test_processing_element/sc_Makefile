@@ -1,6 +1,0 @@
-PROJECT := tlmhelloworld
-CXXFLAGS := -std=c++14 -I../../utils/flit_utils/
-SRCS    := $(wildcard *.cpp) $(wildcard *.cc) ../../utils/flit_utils/flit_utils.cpp
-OBJS    := $(SRCS:.cpp=.o)
-
-include ../../Makefile.rules
