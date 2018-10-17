@@ -232,7 +232,8 @@ uint32_t PacketGenerator::getFlit(uint64_t time){
 						/* When we find the tail, let's log the sent packet */
 						logStream << COLOR_GREEN << "[S]" << COLOR_BLUE << "[PACKET] " 
 									<< COLOR_DEFAULT << "Node_" << mAddress << " - " 
-									<< COLOR_BOLD << "Dst: " << COLOR_DEFAULT << mDestination 
+									<< COLOR_BOLD << "Src: " << COLOR_DEFAULT << mAddress 
+									<< COLOR_BOLD << ", Dst: " << COLOR_DEFAULT << mDestination 
 									<< COLOR_BOLD << ", ID: " << COLOR_DEFAULT << mPacketId
 									<< COLOR_BOLD << ", Length: " << COLOR_DEFAULT << mPacketLength
 									<< COLOR_BOLD << ", Counted length: " << COLOR_DEFAULT << flitNum

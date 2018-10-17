@@ -6,12 +6,13 @@ COLOR_RED = "\033[1;31m"
 COLOR_GREEN = "\033[1;32m"
 COLOR_YELLOW = "\033[1;33m"
 COLOR_BLUE = "\033[1;34m"
-COLOR_BOLD = "\e[1m"
+COLOR_BOLD = "\033[1m"
 COLOR_DEFAULT = "\033[0m"
 
 sentPackets = []
 recvdPackets = []
 faultyPackets = []
+missingPacketsList = []
 errors = []
 
 def printUsage():
@@ -35,7 +36,7 @@ def parsePacket(line):
 
 
 def doStatistics():
-    print(COLOR_BOLD, 'Statistics:', COLOR_DEFAULT)
+    print(COLOR_BOLD + 'Statistics:' + COLOR_DEFAULT)
 
     print('Total packets sent: ', len(sentPackets))
     print('Total packets received: ', len(recvdPackets))
@@ -43,6 +44,30 @@ def doStatistics():
     missingPackets = len(sentPackets) - len(recvdPackets)
     print('Packets missing: ', COLOR_GREEN if missingPackets == 0 else COLOR_RED, 
             missingPackets, COLOR_DEFAULT)
+
+    if missingPackets > 0:
+        for sentPacketString in sentPackets:
+
+            sentSrc = sentPacketString.split('- ')[1].split(', ')[0].split(' ')[1]
+            sentId = sentPacketString.split('- ')[1].split(', ')[2].split(' ')[1]
+            timeStamp = sentPacketString.split(', ')[-1].split(' ')[1]
+            
+            packetFound = False
+
+            for recvPacketString in recvdPackets:
+                recvdSrc = recvPacketString.split('- ')[1].split(', ')[0].split(' ')[1]
+                recvdId = recvPacketString.split('- ')[1].split(', ')[2].split(' ')[1]
+                
+                if recvdSrc == sentSrc and recvdId == sentId:
+                    packetFound = True
+                    break
+            
+            if not packetFound:
+                missingPacketsList.append(sentPacketString)
+
+        print(COLOR_BOLD + "The following packets were lost:\n" + COLOR_DEFAULT)
+        for missingPacket in missingPacketsList:
+            print('    ' + missingPacket.strip())
 
     print()
 
