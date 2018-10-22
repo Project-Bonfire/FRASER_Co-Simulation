@@ -58,6 +58,10 @@ public:
 		mConnectivityBits = connectivityBits;
 	}
 
+	void setFifoSize(uint8_t fifoSize) {
+		mFifoSize = fifoSize;
+	}
+
 	uint32_t getNextFlit() {
 		return mNextFlit;
 	}
@@ -74,6 +78,7 @@ private:
 	uint64_t mCycles = 0; // TODO: Forward Flit after 3 Cycles
 	uint16_t mNocSize = 0;
 	uint16_t mCurrentAddr = 0;
+	uint8_t mFifoSize = 0;
 	std::bitset<16> mConnectivityBits = 0;
 	std::bitset<16> mRoutingBits = 0;
 
