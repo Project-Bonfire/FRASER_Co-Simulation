@@ -28,13 +28,13 @@ class PacketSink {
 public:
     PacketSink(){}
     void init(uint16_t address);
-    void putFlit(uint32_t flit, uint64_t time);
+    void putFlit(uint32_t flit);
 
 
 private:
-    void fsmError(uint64_t time);
-    void logPacket(uint32_t tailFlit, uint64_t time);
-    void printFlit(uint32_t flit, uint64_t time, uint8_t flitType);
+    void fsmError();
+    void logPacket(uint32_t tailFlit);
+    void printFlit(uint32_t flit, uint8_t flitType);
 
     PacketStates mNextState = PacketStates::waitHeader;
     Packet mRecvdPacket;

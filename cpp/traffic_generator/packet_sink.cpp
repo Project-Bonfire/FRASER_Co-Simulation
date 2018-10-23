@@ -36,10 +36,9 @@ void PacketSink::init(uint16_t address) {
  * 
  * Parameters:
  * 	uint32_t flit:     Received flit
- *  uint64_t time:     Current simulation time
  *  uint8_t flitType:  Type of the received flit
  */
-void PacketSink::printFlit(uint32_t flit, uint64_t time, uint8_t flitType) {
+void PacketSink::printFlit(uint32_t flit, uint8_t flitType) {
 
 	std::string flitTypeStr;
 	std::string strColor;
@@ -58,7 +57,7 @@ void PacketSink::printFlit(uint32_t flit, uint64_t time, uint8_t flitType) {
 		strColor = "\033[1;31m";
 	}
 
-	std::cout << COLOR_BOLD << "T=" << time << ": " << COLOR_RED << "[R]" << strColor 
+	std::cout << COLOR_BOLD << COLOR_RED << "[R]" << strColor 
 				<< "PE_" << mAddress << " [Received] " << flitTypeStr << " Flit " 
 				<< COLOR_DEFAULT << flit << " ["<<std::bitset<32>(flit).to_string() << "]" 
 				<< " from " << mRecvdPacket.srcAddr << " to " << mRecvdPacket.dstAddr << std::endl;
@@ -69,13 +68,12 @@ void PacketSink::printFlit(uint32_t flit, uint64_t time, uint8_t flitType) {
  * erroneous state and log the flit as erroneous. This will also cause the FSM in
  * PacketSink::send_flit_to_local to drop all flits until a next header has arrived
  */
-void PacketSink::fsmError(uint64_t time) {
+void PacketSink::fsmError() {
 	if (!mRecvError) {
 		mRecvError = true;
 		mNextState = PacketStates::waitHeader;
 		std::cout << COLOR_BOLD << COLOR_RED << "[R][ERROR]" << COLOR_DEFAULT << " Node_" << mAddress 
-			<< ": Wrong flit order detected!" << COLOR_BOLD 
-			<< ", time: " << time << COLOR_DEFAULT << std::endl;
+			<< ": Wrong flit order detected!" << std::endl;
 	}
 }
 
@@ -85,9 +83,8 @@ void PacketSink::fsmError(uint64_t time) {
  * Parameters:
  *  bool fsmFault - Set to 'true' if flit order error is detected, otherwise 'false'
  *  uint32_t tailFlit - tailflit received from the network
- *  uint64_t time - Current simulation time
  */
-void PacketSink::logPacket(uint32_t tailFlit, uint64_t time) {
+void PacketSink::logPacket(uint32_t tailFlit) {
 	std::stringstream logStream;
 	std::string statusColor;
 	std::string statusStr;
@@ -120,7 +117,6 @@ void PacketSink::logPacket(uint32_t tailFlit, uint64_t time) {
 				<< COLOR_BOLD << ", Counted length: " << COLOR_DEFAULT << mCountedPacketLength
 				<< COLOR_BOLD << ", Encoded CRC: 0x" << COLOR_DEFAULT << std::hex << recvdCrc
 				<< COLOR_BOLD << ", Calculated CRC: " << COLOR_DEFAULT << "0x" << std::hex << calculatedCrc << std::dec 
-				<< COLOR_BOLD << ", time: " << COLOR_DEFAULT << time 
 				<< COLOR_BOLD << statusColor << statusStr << COLOR_DEFAULT << std::endl;
 
 	std::cout << logStream.str();
@@ -132,10 +128,9 @@ void PacketSink::logPacket(uint32_t tailFlit, uint64_t time) {
  *
  * Parameters:
  *  uint32_t flit - flit to receive
- *  uint64_t time - current time
  */
 
-void PacketSink::putFlit(uint32_t flit, uint64_t time) {
+void PacketSink::putFlit(uint32_t flit) {
 
 	uint8_t parity; // TODO not actually checked, but needed for receiving the flits
 	auto flitType = get_flit_type(flit);
@@ -155,7 +150,7 @@ void PacketSink::putFlit(uint32_t flit, uint64_t time) {
 			mNextState = PacketStates::waitFirstBody;
 
 		} else {
-			fsmError(time);
+			fsmError();
 		}
 
 		break;
@@ -169,7 +164,7 @@ void PacketSink::putFlit(uint32_t flit, uint64_t time) {
 			mNextState = PacketStates::waitTail;
 
 		} else {
-			fsmError(time);
+			fsmError();
 		}
 
 		break;
@@ -189,24 +184,21 @@ void PacketSink::putFlit(uint32_t flit, uint64_t time) {
 			mRecvError = false;
 			mNextState = PacketStates::waitHeader;
 
-			logPacket(flit, time);
+			logPacket(flit);
 		} else {
-			fsmError(time);
+			fsmError();
 		}
 
 		break;
 
 	default:
 		std::cout << COLOR_BOLD << COLOR_RED << "[R][ERROR]" << COLOR_DEFAULT << " Node_" << mAddress 
-		<< ": Unknown PacketState!" << COLOR_BOLD 
-		<< ", time: " << time << COLOR_DEFAULT << std::endl;
+		<< ": Unknown PacketState!" << std::endl;
 		return;
 	}
 
 	if (mNextState != PacketStates::waitHeader) {
 		mRecvdPacket.crc.process_bytes(&flit, sizeof(uint32_t));
 	}
-	// printFlit(flit, time, flitType);
-
 
 }

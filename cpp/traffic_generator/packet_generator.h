@@ -22,14 +22,14 @@ public:
     
     void init(uint16_t address, uint8_t nocSize, GenerationModes generationMode, 
 			    double pir, uint16_t minPacketLength, uint16_t maxPacketLength,
-                uint64_t randomSeed, uint64_t generationEndTime);
+                uint64_t randomSeed, uint64_t packetsToGenerate);
 
-    uint32_t getFlit(uint64_t time);
+    uint32_t getFlit();
 
 private:
-    uint32_t counterBasedGeneration(uint64_t time);
-    uint32_t generatePayload(uint64_t time);
-    void printFlit(uint32_t flit, uint64_t time, uint8_t flitType, uint16_t dest);
+    uint32_t counterBasedGeneration();
+    uint32_t generatePayload();
+    void printFlit(uint32_t flit, uint8_t flitType, uint16_t dest);
 
 
     uint16_t mAddress;
@@ -52,7 +52,7 @@ private:
     uint16_t mMinPacketLength;
 	uint16_t mMaxPacketLength;
 	uint64_t mRandomSeed;
-	uint64_t mGenerationEndTime;
+	uint64_t mPacketsToGenerate;
 };
 
 

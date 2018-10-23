@@ -3,8 +3,6 @@
  * fixed traffic (counter, no random data).
  */
 
-#include "packet_generator.h"
-
 #include <iostream>
 #include <string>
 #include <sstream>
@@ -13,6 +11,7 @@
 #include <memory>
 #include <boost/crc.hpp>
 
+#include "packet_generator.h"
 #include "utils/flit_utils.h"
 
 #define COLOR_RED       "\033[1;31m"
@@ -33,15 +32,15 @@
  * 	uint16_t minPacketLength		- Minimum packet length (Should be >= 3)
  * 	uint16_t maxPacketLength		- Maximum packet length (Should be <= 1/pir)
  *  uint64_t randomSeed				- Seed for the random generator
- *  uint64_t generationEndTime		- Time when to stop sending the packets
+ *  uint64_t packetsToGenerate		- Number of packets to generate
  */
 void PacketGenerator::init(uint16_t address, uint8_t nocSize, GenerationModes generationMode, 
 							double pir, uint16_t minPacketLength, uint16_t maxPacketLength,
-							uint64_t randomSeed, uint64_t generationEndTime){
+							uint64_t randomSeed, uint64_t packetsToGenerate){
 	mAddress = address;
 	mGenerationMode = generationMode;
 	mRandomSeed = randomSeed;
-	mGenerationEndTime = generationEndTime;
+	mPacketsToGenerate = packetsToGenerate;
 
 	if ((pir < 0 || pir > 1)) {
 		std::cout << COLOR_BOLD << COLOR_RED << "WARNING:" << COLOR_DEFAULT << " PIR value (" << pir
@@ -101,11 +100,10 @@ void PacketGenerator::init(uint16_t address, uint8_t nocSize, GenerationModes ge
  * 
  * Parameters:
  * 	uint32_t flit:     Sent flit
- *  uint64_t time:     Current simulation time
  *  uint8_t flitType:  Type of the sent flit
  *  uint16_t dest:     Destination of the flit
  */
-void PacketGenerator::printFlit(uint32_t flit, uint64_t time, uint8_t flitType, uint16_t dest) {
+void PacketGenerator::printFlit(uint32_t flit, uint8_t flitType, uint16_t dest) {
 
 	std::string flitTypeStr;
 	std::string strColor;
@@ -123,22 +121,19 @@ void PacketGenerator::printFlit(uint32_t flit, uint64_t time, uint8_t flitType, 
 		flitTypeStr = "TAIL";
 		strColor = COLOR_RED;
 	}
-	std::cout << COLOR_BOLD << "T=" << time << ": " << COLOR_GREEN << "[S] " << strColor 
-					<< "PE_" << mAddress << " [Sent] " << flitTypeStr << " Flit " << COLOR_DEFAULT 
-					<< flit <<" ["<<std::bitset<32>(flit).to_string() << "]" 
-					<< " to " << dest << std::endl;
+	std::cout << COLOR_GREEN << "[S] " << strColor << "PE_" << mAddress << " [Sent] " 
+				<< flitTypeStr << " Flit " << COLOR_DEFAULT 
+			  	<< flit <<" ["<<std::bitset<32>(flit).to_string() << "]" 
+			  	<< " to " << dest << std::endl;
 }
 
 /*
  * Implements a flit generation with different generation modes.
- *
- * Parameters:
- * 	uint64_t time - current simulation time
  * 
  * Returns:
  * 	uint32_t Generated payload, 0 when generation failed
  */
-uint32_t PacketGenerator::generatePayload(uint64_t time) {
+uint32_t PacketGenerator::generatePayload() {
 
 	uint32_t payload;
 
@@ -151,8 +146,7 @@ uint32_t PacketGenerator::generatePayload(uint64_t time) {
 
 		default:
 			std::cout << COLOR_BOLD << COLOR_RED << "[S][ERROR]" << COLOR_DEFAULT << " Node_" << mAddress 
-				<< ": Unknown generation mode!" << COLOR_BOLD 
-				<< ", time: " << time << COLOR_DEFAULT << std::endl;
+				<< ": Unknown generation mode!" << std::endl;
 			return 0;
 		}
 
@@ -163,14 +157,11 @@ uint32_t PacketGenerator::generatePayload(uint64_t time) {
 /*
  * Gets a flit from packet generator.
  * 
- * Parameters:
- * 	uint64_t time - current simulation time
- * 
  * Returns:
  * 	uint32_t flit: The generated flit. If no flit is generated, 0 is returned.
  */
 
-uint32_t PacketGenerator::getFlit(uint64_t time){
+uint32_t PacketGenerator::getFlit(){
 	std::stringstream logStream;
 	auto flitNum = mCounter - mStartupDelay + 1;
 	std::string logLine;
@@ -183,7 +174,7 @@ uint32_t PacketGenerator::getFlit(uint64_t time){
 
 			mCrc.reset();
 
-			if (mCounter == mStartupDelay && time < mGenerationEndTime) {
+			if ((mCounter == mStartupDelay) && (mPacketId < mPacketsToGenerate)) {
 				mGenerationState = GenerationStates::sendFlit;
 			}
 			break;
@@ -238,7 +229,7 @@ uint32_t PacketGenerator::getFlit(uint64_t time){
 									<< COLOR_BOLD << ", Length: " << COLOR_DEFAULT << mPacketLength
 									<< COLOR_BOLD << ", Counted length: " << COLOR_DEFAULT << flitNum
 									<< COLOR_BOLD << ", CRC:" << COLOR_DEFAULT << " 0x" << std::hex << checksum << std::dec
-									<< COLOR_BOLD << ", time: " << COLOR_DEFAULT << time << std::endl;
+									<< std::endl;
 
 						logLine = logStream.str();
 						std::cout << logLine;
@@ -247,8 +238,7 @@ uint32_t PacketGenerator::getFlit(uint64_t time){
 
 				default:
 						std::cout << COLOR_BOLD << COLOR_RED << "[S][ERROR]" << COLOR_DEFAULT << " Node_" << mAddress 
-									<< ": Unknown Flit type!" << COLOR_BOLD 
-									<< ", time: " << time << COLOR_DEFAULT << std::endl;
+									<< ": Unknown Flit type!" << std::endl;
 					return 0;
 			}
 
@@ -257,7 +247,7 @@ uint32_t PacketGenerator::getFlit(uint64_t time){
 			}
 
 			mCrc.process_bytes(&flit, sizeof(uint32_t));
-			printFlit(flit, time, get_flit_type(flit), mDestination);
+			printFlit(flit, get_flit_type(flit), mDestination);
 
 			break;
 
@@ -274,8 +264,7 @@ uint32_t PacketGenerator::getFlit(uint64_t time){
 
 		default:
 			std::cout << COLOR_BOLD << COLOR_RED << "[S][ERROR]" << COLOR_DEFAULT << " Node_" << mAddress 
-						<< ": Unknown Frame Generation State!" << COLOR_BOLD 
-						<< ", time: " << time << COLOR_DEFAULT << std::endl;
+						<< ": Unknown Frame Generation State!" << std::endl;
 			return 0;
 	}
 
