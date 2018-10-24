@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 
 import sys
+import argparse
 
 COLOR_RED = "\033[1;31m"
 COLOR_GREEN = "\033[1;32m"
@@ -14,13 +15,6 @@ recvdPackets = []
 faultyPackets = []
 missingPacketsList = []
 errors = []
-
-def printUsage():
-    print('Traffic generation output parser')
-    print('Usage: ', sys.argv[0], ' [options] <logfile>')
-    print('Parameters: ')
-    print('\t<logfile>: Path to simulation log to be parsed')
-    print('\t--help, -h: Displays this message and exits')
 
 def parsePacket(line):
     if '[S]' in line:
@@ -50,7 +44,6 @@ def doStatistics():
 
             sentSrc = sentPacketString.split('- ')[1].split(', ')[0].split(' ')[1]
             sentId = sentPacketString.split('- ')[1].split(', ')[2].split(' ')[1]
-            timeStamp = sentPacketString.split(', ')[-1].split(' ')[1]
             
             packetFound = False
 
@@ -95,11 +88,21 @@ def doStatistics():
 
 
 def main():
-    if len(sys.argv) != 2 or '-h' in sys.argv or '--help' in sys.argv:
-        printUsage()
-        sys.exit(0)
+    # if len(sys.argv) != 2 or '-h' in sys.argv or '--help' in sys.argv:
+    #     printUsage()
+    #     sys.exit(0)
 
-    with open(sys.argv[1], 'r') as logFile:
+    parser = argparse.ArgumentParser(description='Traffic generation output parser.')
+    parser.add_argument('--logfile', '-f', type=str, required=True,
+                        help='Log file to parse')
+    parser.add_argument('--listSent', '-ls', action='store_true', required=False,
+                        help='List all sent packets')
+    parser.add_argument('--listRecv', '-lr',  action='store_true', required=False,
+                        help='List all received packet')
+
+    args = parser.parse_args()
+ 
+    with open(args.logfile, 'r') as logFile:
 
         for line in logFile:
             if '[PACKET]' in line:
@@ -109,6 +112,18 @@ def main():
                 errors.append(line)
 
     doStatistics()
+
+    if args.listSent:
+        print()
+        print(COLOR_BOLD + 'All sent packets:' + COLOR_DEFAULT)
+        for packet in sentPackets:
+            print(packet.strip())
+
+    if args.listRecv:
+        print()
+        print(COLOR_BOLD + 'All received packets:' + COLOR_DEFAULT)
+        for packet in recvdPackets:
+            print(packet.strip())
 
 if __name__ == '__main__':
     if sys.version_info[0] < 3:

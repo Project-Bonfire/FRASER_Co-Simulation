@@ -1,6 +1,5 @@
 /*
- * This file implements a simple packet generator with
- * fixed traffic (counter, no random data).
+ * This file implements a packet generator.
  */
 
 #include <iostream>
@@ -12,9 +11,7 @@
 #include <boost/crc.hpp>
 #include <boost/function.hpp>
 #include <boost/bind.hpp>
-// #include <boost/random/mersenne_twister.hpp>
-#include <boost/random/uniform_real_distribution.hpp>
-// #include <boost/random/normal_distribution.hpp>
+#include <boost/random/uniform_int_distribution.hpp>
 
 #include "packet_generator.h"
 #include "utils/flit_utils.h"
@@ -28,9 +25,11 @@
 
 template<class T>
 T PacketGenerator::randomUint(T minValue, T maxValue){
-	    boost::function<T()> randomNumber = 
-        boost::bind(boost::random::uniform_real_distribution<>(minValue, maxValue), mRandomEngine);
-		return abs(randomNumber());
+	    // boost::function<T()> randomNumber = 
+        // boost::bind(boost::random::uniform_real_distribution<>(minValue, maxValue), mRandomEngine);
+
+		boost::random::uniform_int_distribution<> randomNumber(minValue, maxValue);
+		return randomNumber(mRandomEngine);
 }
 
 /*
@@ -100,6 +99,7 @@ void PacketGenerator::init(uint16_t address, uint8_t nocSize, GenerationModes ge
 		<< " (Frame Length " << mFrameLength << "), packet length between "
 		<< minPacketLength << " and " << maxPacketLength << std::endl;
 
+	mNocSize = nocSize;
 	mCounter = 0;
 	mFlitType = FlitType::header;
 	mWaiting = true;
