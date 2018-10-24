@@ -167,7 +167,7 @@ uint32_t PacketGenerator::generatePayload() {
 			break;
 
 		case GenerationModes::random:
-			payload = randomUint<uint32_t>(0, 2^24);
+			payload = randomUint<uint32_t>(0, 268435456);
 			break;
 
 		default:
@@ -252,8 +252,21 @@ uint32_t PacketGenerator::getFlit(){
 
 				case FlitType::tail:
 					{
+						const uint32_t payloadMask = 0xFFF0000;
+						auto payload = generatePayload() & payloadMask;
+						std::cout << std::bitset<28>(payload) << std::dec << " - payload" << std::endl;
+						
+						flit = make_tail_flit(payload);
+						mCrc.process_bytes(&flit, sizeof(uint32_t));
+
 						auto checksum = mCrc.checksum();
-						flit = make_tail_flit(checksum);
+						std::cout <<  std::bitset<28>(checksum) << std::dec << " - crc" << std::endl;
+
+						payload = payload | checksum;
+						std::cout <<  std::bitset<28>(payload) << std::dec << " - appended payload" << std::endl;
+
+						flit = make_tail_flit(payload);
+						std::cout << std::bitset<32>(flit) << std::dec << " - flit" << std::endl;
 
 						mFlitType = FlitType::header;
 

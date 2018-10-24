@@ -90,9 +90,19 @@ void PacketSink::logPacket(uint32_t tailFlit) {
 	std::string statusStr;
 
 	/* Extract CRC from tail */
+
+	std::cout << "RECV" << std::endl;
+	std::cout << std::bitset<32>(tailFlit) << std::dec << " - flit" << std::endl;
 	auto tailPayload = get_bit_range(tailFlit, 1, 28);
-	uint16_t recvdCrc = tailPayload | 0xFFFF0000;
+	std::cout << std::bitset<28>(tailPayload) << std::dec << " - tail payload" << std::endl;
+	uint16_t recvdCrc = get_bit_range(tailFlit, 1, 16);
+
+	std::cout << std::bitset<28>(recvdCrc) << std::dec << " - recvdCrc" << std::endl;
 	
+	uint32_t tailFlitWithoutCrc = 0b11111111111111100000000000000001 & tailFlit;
+
+	mRecvdPacket.crc.process_bytes(&tailFlitWithoutCrc, sizeof(uint32_t));
+
 	/* Calculated CRC for comparison */
 	auto calculatedCrc = mRecvdPacket.crc.checksum();
 
