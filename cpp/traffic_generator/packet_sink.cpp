@@ -85,25 +85,20 @@ void PacketSink::fsmError() {
  *  uint32_t tailFlit - tailflit received from the network
  */
 void PacketSink::logPacket(uint32_t tailFlit) {
+	const u_int32_t crcClearMask = 0xFFFE0001;
 	std::stringstream logStream;
 	std::string statusColor;
 	std::string statusStr;
 
-	/* Extract CRC from tail */
-
-	std::cout << "RECV" << std::endl;
-	std::cout << std::bitset<32>(tailFlit) << std::dec << " - flit" << std::endl;
-	auto tailPayload = get_bit_range(tailFlit, 1, 28);
-	std::cout << std::bitset<28>(tailPayload) << std::dec << " - tail payload" << std::endl;
+	// Extract CRC from tail
 	uint16_t recvdCrc = get_bit_range(tailFlit, 1, 16);
 
-	std::cout << std::bitset<28>(recvdCrc) << std::dec << " - recvdCrc" << std::endl;
-	
-	uint32_t tailFlitWithoutCrc = 0b11111111111111100000000000000001 & tailFlit;
+	// Clear the CRC part from the tailflit for CRC calculation
+	uint32_t tailFlitWithoutCrc = crcClearMask & tailFlit;
 
 	mRecvdPacket.crc.process_bytes(&tailFlitWithoutCrc, sizeof(uint32_t));
 
-	/* Calculated CRC for comparison */
+	// Calculated CRC for comparison
 	auto calculatedCrc = mRecvdPacket.crc.checksum();
 
 	bool faultyCrc = (calculatedCrc != recvdCrc);

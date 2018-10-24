@@ -188,10 +188,11 @@ uint32_t PacketGenerator::generatePayload() {
  */
 
 uint32_t PacketGenerator::getFlit(){
+	const uint32_t payloadMask = 0xFFF0000;
+	uint32_t flit = 0;
+	std::string logLine;
 	std::stringstream logStream;
 	auto flitNum = mCounter - mStartupDelay + 1;
-	std::string logLine;
-	uint32_t flit = 0;
 
 	mCounter++;
 
@@ -252,21 +253,16 @@ uint32_t PacketGenerator::getFlit(){
 
 				case FlitType::tail:
 					{
-						const uint32_t payloadMask = 0xFFF0000;
 						auto payload = generatePayload() & payloadMask;
-						std::cout << std::bitset<28>(payload) << std::dec << " - payload" << std::endl;
-						
 						flit = make_tail_flit(payload);
+
+						// Process CRC over the tail flit
 						mCrc.process_bytes(&flit, sizeof(uint32_t));
 
+						// Add CRC to the tail
 						auto checksum = mCrc.checksum();
-						std::cout <<  std::bitset<28>(checksum) << std::dec << " - crc" << std::endl;
-
 						payload = payload | checksum;
-						std::cout <<  std::bitset<28>(payload) << std::dec << " - appended payload" << std::endl;
-
 						flit = make_tail_flit(payload);
-						std::cout << std::bitset<32>(flit) << std::dec << " - flit" << std::endl;
 
 						mFlitType = FlitType::header;
 
