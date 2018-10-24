@@ -9,12 +9,9 @@
 #include <cstdint>
 #include <queue>
 #include <boost/crc.hpp>
-// #include <boost/function.hpp>
-// #include <boost/bind.hpp>
 #include <boost/random/mersenne_twister.hpp>
-// #include <boost/random/uniform_real_distribution.hpp>
 
-enum class GenerationModes {counter}; // TODO: Add other modes
+enum class GenerationModes {counter, random};
 enum class FlitType {header, firstBody, body, tail};
 enum class GenerationStates {startupDelay, sendFlit, waitFrameEnd};
 
