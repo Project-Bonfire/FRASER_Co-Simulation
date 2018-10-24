@@ -10,6 +10,11 @@
 #include <cstdint>
 #include <memory>
 #include <boost/crc.hpp>
+#include <boost/function.hpp>
+#include <boost/bind.hpp>
+// #include <boost/random/mersenne_twister.hpp>
+#include <boost/random/uniform_real_distribution.hpp>
+// #include <boost/random/normal_distribution.hpp>
 
 #include "packet_generator.h"
 #include "utils/flit_utils.h"
@@ -21,12 +26,19 @@
 #define COLOR_BOLD      "\e[1m"
 #define COLOR_DEFAULT   "\033[0m"
 
+template<class T>
+T PacketGenerator::randomUint(T minValue, T maxValue){
+	    boost::function<T()> randomNumber = 
+        boost::bind(boost::random::uniform_real_distribution<>(minValue, maxValue), mRandomEngine);
+		return abs(randomNumber());
+}
+
 /*
  * Initializes the packet generator
  * 
  * Parameters:
  * 	uint16_t address 				- address of the current node
- * 	uint8_t nocSize					- Number of node in the NoC
+ * 	uint8_t nocSize					- Number of nodes in the NoC
  * 	GenerationModes generationMode	- packet generation mode
  * 	double pir						- Packet Injection Rate (a value between 0 and 1), packets per (clock)cycle
  * 	uint16_t minPacketLength		- Minimum packet length (Should be >= 3)
@@ -39,8 +51,9 @@ void PacketGenerator::init(uint16_t address, uint8_t nocSize, GenerationModes ge
 							uint64_t randomSeed, uint64_t packetsToGenerate){
 	mAddress = address;
 	mGenerationMode = generationMode;
-	mRandomSeed = randomSeed;
 	mPacketsToGenerate = packetsToGenerate;
+
+	mRandomEngine.seed(randomSeed + address);
 
 	if ((pir < 0 || pir > 1)) {
 		std::cout << COLOR_BOLD << COLOR_RED << "WARNING:" << COLOR_DEFAULT << " PIR value (" << pir
@@ -91,8 +104,8 @@ void PacketGenerator::init(uint16_t address, uint8_t nocSize, GenerationModes ge
 	mFlitType = FlitType::header;
 	mWaiting = true;
 	mGenerationState = GenerationStates::startupDelay;
-	mStartupDelay = 3; // TODO: Replace with random
-	mPacketLength = 10; // TODO: Replace with random
+	mStartupDelay = randomUint<uint16_t>(0, 5); // TODO: Make parameterizable
+	mPacketLength = randomUint<uint16_t>(mMinPacketLength, mMaxPacketLength);
 }
 
 /*
@@ -184,9 +197,14 @@ uint32_t PacketGenerator::getFlit(){
 			switch (mFlitType) {
 				case FlitType::header:
 					{
-						mDestination = 1; // TODO: Implement random destination generation
+						mDestination = randomUint<uint16_t>(0, mNocSize - 1);
+
 						if (mDestination == mAddress) {
-							mDestination = 2;
+							if (mAddress == mNocSize - 1) {
+								mDestination = 0;
+							} else {
+								mDestination = mDestination + 1;
+							}
 						}
 
 						flit = make_header_flit(mDestination, mAddress);
@@ -197,13 +215,18 @@ uint32_t PacketGenerator::getFlit(){
 				case FlitType::firstBody:
 					{
 						flit = make_first_body_flit(mPacketLength, mPacketId);
-						mFlitType = FlitType::body;
+
+						if (flitNum == mPacketLength - 1) {
+							mFlitType = FlitType::tail;
+						} else {
+							mFlitType = FlitType::body;
+						}
 					}
 					break;
 
 				case FlitType::body:
 					{
-						flit = make_body_flit(mCounter);
+						flit = make_body_flit(mCounter); // TODO: Replace with random
 
 						if (flitNum == mPacketLength - 1) {
 							mFlitType = FlitType::tail;
@@ -254,11 +277,12 @@ uint32_t PacketGenerator::getFlit(){
 
 		case GenerationStates::waitFrameEnd:
 			if (mCounter == mFrameLength) {
-				mStartupDelay = 2; // TODO: replace with random
-				mPacketLength = 10; // TODO: Replace with random
 				mCounter = 0;
-				mGenerationState = GenerationStates::startupDelay;
+				mFlitType = FlitType::header;
+				mStartupDelay = randomUint<uint16_t>(0, 5); // TODO: Make parameterizable
+				mPacketLength = randomUint<uint16_t>(mMinPacketLength, mMaxPacketLength);
 				mPacketId++;
+				mGenerationState = GenerationStates::startupDelay;
 			}
 			break;
 
